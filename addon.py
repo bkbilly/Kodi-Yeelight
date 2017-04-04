@@ -64,8 +64,8 @@ class Yeelight:
     connected = None
     initial_state = []
 
-    def __init__(self):
-        self.bulb_ip = __addon__.getSetting("light1_id")
+    def __init__(self, ip):
+        self.bulb_ip = ip
         self.bulb_port = 55443
 
     def turnOff(self):
@@ -108,31 +108,41 @@ def showNotification(message):
     xbmc.executebuiltin('Notification(%s, %s, %s, %s)' %
                         (__addonname__, message, 3, __icon__))
 
-
 def state_changed(state):
+    if light_num >= 1:
+        state_action(state,yeelight1)
+    if light_num >= 2:
+        state_action(state,yeelight2)
+
+def state_action(state, bulb):
     if state == "started":
-        mystate = yeelight.getState()
-        yeelight.initial_state = mystate
-        if yeelight.initial_state[0] == "on":
-            yeelight.blueLight()
+        bulb.initial_state = bulb.getState()
+        if bulb.initial_state[0] == "on":
+            bulb.blueLight()
     elif state == "resumed":
-        if yeelight.initial_state[0] == "on":
-            yeelight.blueLight()
+        if bulb.initial_state[0] == "on":
+            bulb.blueLight()
     elif state == "paused":
-        if yeelight.initial_state[0] == "on":
-            yeelight.turnOn()
+        if bulb.initial_state[0] == "on":
+            bulb.turnOn()
     elif state == "stopped":
-        if yeelight.initial_state[0] == "on":
-            yeelight.turnOn()
+        if bulb.initial_state[0] == "on":
+            bulb.turnOn()
         else:
-            yeelight.turnOff()
+            bulb.turnOff()
 
 
 if __name__ == '__main__':
     logger = Logger()
 
     monitor = xbmc.Monitor()
-    yeelight = Yeelight()
+    
+    light_num = int(__addon__.getSetting("light_num"))
+    
+    if light_num >= 1:
+        yeelight1 = Yeelight(__addon__.getSetting("light1_id"))
+    if light_num >= 2:
+        yeelight2 = Yeelight(__addon__.getSetting("light2_id"))
 
     showNotification("Started")
     player = MyPlayer()
