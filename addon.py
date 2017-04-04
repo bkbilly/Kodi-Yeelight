@@ -39,6 +39,7 @@ class MyPlayer(xbmc.Player):
 
 
 class Logger:
+
     scriptname = "Kodi Hue"
     enabled = True
     debug_enabled = False
@@ -59,8 +60,9 @@ class Logger:
 
 
 class Yeelight:
+
     connected = None
-    initial_state = ""
+    initial_state = []
 
     def __init__(self):
         self.bulb_ip = __addon__.getSetting("light1_id")
@@ -70,14 +72,24 @@ class Yeelight:
         message = {"id": 1, "method": "set_power", "params": ["off", "smooth", 500]}
         self.connect(message, self.bulb_ip, self.bulb_port)
 
+    def blueLight(self):
+        message = {"id": 1, "method": "set_scene", "params": ["color", 1315890, 50]}
+        self.connect(message, self.bulb_ip, self.bulb_port)
+
     def turnOn(self):
         message = {"id": 1, "method": "set_power", "params": ["on", "smooth", 500]}
+        if self.initial_state[2] == "1":  # rgb mode
+            message = {"id": 1, "method": "set_scene", "params": ["color", int(self.initial_state[4]), int(self.initial_state[1])]}
+        elif self.initial_state[2] == "2": # white mode
+            message = {"id": 1, "method": "set_scene", "params": ["ct", int(self.initial_state[3]), int(self.initial_state[1])]}
+        elif self.initial_state[2] == "3": # hsv mode
+            message = {"id": 1, "method": "set_scene", "params": ["hsv" , int(self.initial_state[5]), int(self.initial_state[6]), int(self.initial_state[1])]}
         self.connect(message, self.bulb_ip, self.bulb_port)
 
     def getState(self):
-        message = {"id": 1, "method": "get_prop", "params": ["power"]}
+        message = {"id": 1, "method": "get_prop", "params": ["power", "bright", "color_mode", "ct", "rgb", "hue", "sat"]}
         state = self.connect(message, self.bulb_ip, self.bulb_port)
-        return json.loads(state)["result"][0]
+        return json.loads(state)["result"]
 
     def connect(self, command, bulb_ip, bulb_port):
         try:
@@ -101,16 +113,19 @@ def state_changed(state):
     if state == "started":
         mystate = yeelight.getState()
         yeelight.initial_state = mystate
-        yeelight.turnOff()
+        if yeelight.initial_state[0] == "on":
+            yeelight.blueLight()
     elif state == "resumed":
-        yeelight.turnOff()
+        if yeelight.initial_state[0] == "on":
+            yeelight.blueLight()
     elif state == "paused":
-        yeelight.turnOn()
-    elif state == "stopped":
-        if yeelight.initial_state == "off":
-            yeelight.turnOff()
-        else:
+        if yeelight.initial_state[0] == "on":
             yeelight.turnOn()
+    elif state == "stopped":
+        if yeelight.initial_state[0] == "on":
+            yeelight.turnOn()
+        else:
+            yeelight.turnOff()
 
 
 if __name__ == '__main__':
