@@ -3,13 +3,9 @@
     <category label="1000">
         <!--Lights-->
         <setting type="lsep" label="Main" />
-        <!-- <setting id="discover_bridge" type="action" label="1101" action="RunScript(script.kodi.hue.ambilight,action=discover)" /> -->
-        <!-- <setting id="light" type="enum" enable="true" label="1301" default="1" lvalues="1303|1304|1305|1306" /> -->
-        <!-- <setting id="light1_id" type="text" label="1306" default="1" enable="gt(-1,-1)" visible="gt(-1,-1)" /> -->
-        <!-- <setting id="light2_id" type="text" label="1307" default="2" enable="gt(-2,0)" visible="gt(-2,0)" /> -->
-        <!-- <setting id="light3_id" type="text" label="1308" default="3" enable="gt(-3,1)" visible="gt(-3,1)" /> -->
-        <!-- <setting id="light4_id" type="text" label="1309" default="4" enable="gt(-4,2)" visible="gt(-4,2)" /> -->
-        <setting id="light1_id" type="text" label="Lamp IP" default="" enable="gt(-1,-1)" visible="gt(-1,-1)" />
+        <setting id="light_num" type="enum" enable="true" label="Number of bulbs" default="1" values="0|1|2" />
+        <setting id="light1_id" type="text" label="Lamp 1 IP" default="" enable="gt(-1,0)" visible="gt(-1,0)" />
+        <setting id="light2_id" type="text" label="Lamp 2 IP" default="" enable="gt(-2,1)" visible="gt(-2,1)" />
     </category>
 
 </settings>

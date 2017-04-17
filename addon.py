@@ -39,6 +39,7 @@ class MyPlayer(xbmc.Player):
 
 
 class Logger:
+
     scriptname = "Kodi Hue"
     enabled = True
     debug_enabled = False
@@ -59,25 +60,36 @@ class Logger:
 
 
 class Yeelight:
-    connected = None
-    initial_state = ""
 
-    def __init__(self):
-        self.bulb_ip = __addon__.getSetting("light1_id")
+    connected = None
+    initial_state = []
+
+    def __init__(self, ip):
+        self.bulb_ip = ip
         self.bulb_port = 55443
 
     def turnOff(self):
         message = {"id": 1, "method": "set_power", "params": ["off", "smooth", 500]}
         self.connect(message, self.bulb_ip, self.bulb_port)
 
+    def blueLight(self):
+        message = {"id": 1, "method": "set_scene", "params": ["color", 1315890, 50]}
+        self.connect(message, self.bulb_ip, self.bulb_port)
+
     def turnOn(self):
         message = {"id": 1, "method": "set_power", "params": ["on", "smooth", 500]}
+        if self.initial_state[2] == "1":  # rgb mode
+            message = {"id": 1, "method": "set_scene", "params": ["color", int(self.initial_state[4]), int(self.initial_state[1])]}
+        elif self.initial_state[2] == "2": # white mode
+            message = {"id": 1, "method": "set_scene", "params": ["ct", int(self.initial_state[3]), int(self.initial_state[1])]}
+        elif self.initial_state[2] == "3": # hsv mode
+            message = {"id": 1, "method": "set_scene", "params": ["hsv" , int(self.initial_state[5]), int(self.initial_state[6]), int(self.initial_state[1])]}
         self.connect(message, self.bulb_ip, self.bulb_port)
 
     def getState(self):
-        message = {"id": 1, "method": "get_prop", "params": ["power"]}
+        message = {"id": 1, "method": "get_prop", "params": ["power", "bright", "color_mode", "ct", "rgb", "hue", "sat"]}
         state = self.connect(message, self.bulb_ip, self.bulb_port)
-        return json.loads(state)["result"][0]
+        return json.loads(state)["result"]
 
     def connect(self, command, bulb_ip, bulb_port):
         try:
@@ -96,28 +108,41 @@ def showNotification(message):
     xbmc.executebuiltin('Notification(%s, %s, %s, %s)' %
                         (__addonname__, message, 3, __icon__))
 
-
 def state_changed(state):
+    if light_num >= 1:
+        state_action(state,yeelight1)
+    if light_num >= 2:
+        state_action(state,yeelight2)
+
+def state_action(state, bulb):
     if state == "started":
-        mystate = yeelight.getState()
-        yeelight.initial_state = mystate
-        yeelight.turnOff()
+        bulb.initial_state = bulb.getState()
+        if bulb.initial_state[0] == "on":
+            bulb.blueLight()
     elif state == "resumed":
-        yeelight.turnOff()
+        if bulb.initial_state[0] == "on":
+            bulb.blueLight()
     elif state == "paused":
-        yeelight.turnOn()
+        if bulb.initial_state[0] == "on":
+            bulb.turnOn()
     elif state == "stopped":
-        if yeelight.initial_state == "off":
-            yeelight.turnOff()
+        if bulb.initial_state[0] == "on":
+            bulb.turnOn()
         else:
-            yeelight.turnOn()
+            bulb.turnOff()
 
 
 if __name__ == '__main__':
     logger = Logger()
 
     monitor = xbmc.Monitor()
-    yeelight = Yeelight()
+    
+    light_num = int(__addon__.getSetting("light_num"))
+    
+    if light_num >= 1:
+        yeelight1 = Yeelight(__addon__.getSetting("light1_id"))
+    if light_num >= 2:
+        yeelight2 = Yeelight(__addon__.getSetting("light2_id"))
 
     showNotification("Started")
     player = MyPlayer()
